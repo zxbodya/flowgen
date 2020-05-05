@@ -1,0 +1,30 @@
+workflows:
+  version: 2
+  node-multi-build:
+    jobs:
+      - node-latest
+
+version: 2
+jobs:
+  base: &base
+    docker:
+      - image: circleci/node:latest
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v{{ .Environment.CIRCLECI_CACHE_VERSION }}-dependencies1-{{ checksum "yarn.lock" }}
+            - v{{ .Environment.CIRCLECI_CACHE_VERSION }}-dependencies1-
+      - run: yarn install
+      - save_cache:
+          paths:
+            - node_modules
+          key: v{{ .Environment.CIRCLECI_CACHE_VERSION }}-dependencies1-{{ checksum "yarn.lock" }}
+      - run: yarn run lint
+      - run: yarn run test -- --runInBand
+      - run: yarn run compile
+  node-latest:
+    <<: *base
+    docker:
+      - image: node:latest
